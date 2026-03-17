@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>חוקרים את הסביבה שלנו – פעילות אינטראקטיבית</title>
+  <style>
+    :root{
+      --bg:#f7f9ff;
+      --card:#ffffff;
+      --ink:#1f2a44;
+      --muted:#55607a;
+      --brand:#6c63ff;
+      --brand-2:#00bfa6;
+      --ok:#0a7a28;
+      --bad:#b3261e;
+      --warn:#a76d00;
+      --shadow: 0 10px 20px rgba(31,42,68,0.12);
+      --radius:16px;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; background:linear-gradient(135deg,#eef3ff, #f7fffb 35%, #fff);
+      font-family: system-ui, "Segoe UI", Arial, "Noto Sans Hebrew", sans-serif;
+      color:var(--ink); line-height:1.6;
+    }
+    .wrap{max-width:1000px; margin:auto; padding:clamp(16px,3vw,32px);}
+    header{
+      background: radial-gradient(1200px 600px at 90% -50%, #c8d2ff 0, transparent 60%),
+                  radial-gradient(1000px 700px at -10% 0%, #b6ffee 0, transparent 60%), #eaf1ff;
+      border-bottom:3px solid #e4ebff;
+    }
+    header .wrap{display:flex; gap:20px; align-items:flex-end; justify-content:space-between;}
+    h1{margin:0 0 6px; font-size:clamp(24px,3.6vw,36px);}
+    .subtitle{margin:0 0 10px; color:var(--muted);}
+    .badge{display:inline-block; background:var(--brand); color:#fff; padding:.25rem .6rem; border-radius:999px; font-size:.85rem;}
+    .grid{display:grid; gap:16px;}
+    @media(min-width:850px){ .grid-2{grid-template-columns: 1fr 1fr;} }
+    section.card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:clamp(14px,2vw,22px); border:1px solid #e8ecff;
+    }
+    section.card h2{margin:0 0 8px; font-size:clamp(18px,2.4vw,24px);}
+    .hint{color:var(--muted); font-size:.95rem;}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+    button{
+      background:var(--brand); color:#fff; border:0; padding:.6rem 1rem; border-radius:10px; cursor:pointer;
+      box-shadow:0 4px 10px rgba(108,99,255,.2); transition:transform .06s ease, filter .2s;
+      font-size:1rem;
+    }
+    button.secondary{background:#e9ecff; color:#2b3180;}
+    button.ghost{background:transparent; border:1px solid #cfd8ff; color:#2b3180;}
+    button:active{transform:translateY(1px);}
+    .pill{display:inline-flex; align-items:center; gap:.5rem; padding:.4rem .7rem; border-radius:999px; border:1px dashed #cfe0ff; color:#2b3180; background:#f7fbff; font-size:.9rem;}
+    .ok{color:var(--ok);} .bad{color:var(--bad);} .warn{color:var(--warn);}
+    .score{font-weight:700; margin-inline-start:auto;}
+    details summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:.5rem;}
+    details summary::-webkit-details-marker{display:none;}
+    details{border:1px solid #e6ecff; border-radius:12px; background:#fbfcff; padding:10px 14px;}
+    details[open]{background:#f4f7ff;}
+    /* --- Drag & Drop --- */
+    .chips{display:flex; flex-wrap:wrap; gap:8px;}
+    .chip{
+      user-select:none; padding:.45rem .7rem; background:#fff; border:1px solid #dbe5ff; border-radius:999px;
+      box-shadow:0 2px 6px rgba(0,0,0,.06); cursor:grab; transition:transform .08s ease, background .2s;
+    }
+    .chip:active{cursor:grabbing; transform:scale(.98);}
+    .zones{display:grid; gap:12px;}
+    @media(min-width:780px){ .zones{grid-template-columns:1fr 1fr;} }
+    .zone{
+      min-height:120px; border:2px dashed #bcd2ff; border-radius:14px; padding:10px; background:#f7fbff;
+    }
+    .zone h3{margin:0 0 6px; font-size:1.05rem; color:#2b3180;}
+    .zone .placeholder{color:#8aa0c9;}
+    .zone.over{background:#eef5ff; border-color:#6c8bff;}
+    .chip.placed{background:#eef5ff;}
+    /* --- Matching --- */
+    .match{display:grid; gap:14px;}
+    @media(min-width:780px){ .match{grid-template-columns:1fr 1fr;} }
+    .list{display:flex; flex-direction:column; gap:8px;}
+    .item{
+      background:#fff; border:1px solid #e1e9ff; border-radius:10px; padding:.55rem .7rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between; gap:8px; box-shadow:0 2px 6px rgba(0,0,0,.05);
+    }
+    .item.active{outline:2px solid var(--brand);}
+    .item.correct{border-color:#a8e6cf; background:#f0fff9;}
+    .item.wrong{border-color:#ffd3d3; background:#fff6f6;}
+    /* --- True/False --- */
+    .tf-row{display:flex; align-items:center; justify-content:space-between; gap:8px; border:1px solid #e6ecff; padding:.6rem .7rem; border-radius:10px; background:#fff;}
+    .tf-choices{display:flex; gap:8px;}
+    .radio{display:inline-flex; gap:6px; align-items:center; background:#f7fbff; border:1px solid #dbe5ff; padding:.35rem .55rem; border-radius:999px;}
+    /* --- MCQ --- */
+    .mcq .option{display:flex; gap:8px; align-items:flex-start; padding:.5rem; border:1px solid #e6ecff; border-radius:10px; background:#fff; cursor:pointer;}
+    .mcq .option input{margin-top:4px;}
+    .mcq .option.correct{border-color:#a8e6cf; background:#f0fff9;}
+    .mcq .option.wrong{border-color:#ffd3d3; background:#fff6f6;}
+    /* --- Cloze --- */
+    .cloze input{
+      width:8.5em; max-width:40vw; padding:.35rem .5rem; border-radius:8px; border:1px solid #cfe0ff; background:#fff;
+    }
+    .inline{display:inline-flex; gap:6px; flex-wrap:wrap; align-items:center;}
+    /* --- Open answers --- */
+    textarea{
+      width:100%; min-height:110px; border-radius:12px; border:1px solid #dfe6ff; padding:.7rem; resize:vertical; background:#fff;
+    }
+    /* --- Footer summary --- */
+    .summary{display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e6ecff; border-radius:12px; padding:10px; }
+    .meter{
+      --p:0;
+      position:relative; inline-size:min(320px,70vw); block-size:14px; background:#edf1ff; border-radius:999px; overflow:hidden;
+    }
+    .meter::after{
+      content:""; position:absolute; inset:0; inline-size: calc(var(--p) * 1%); background:linear-gradient(90deg,var(--brand),var(--brand-2));
+    }
+    .note{font-size:.92rem; color:var(--muted);}
+    .small{font-size:.9rem; color:var(--muted);}
+    .kudos{font-weight:700;}
+    /* accessibility helpers */
+    .sr-only{position:absolute !important; inline-size:1px; block-size:1px; overflow:hidden; clip:rect(1px,1px,1px,1px); white-space:nowrap;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div>
+        <span class="badge">מדעים · כיתה יסודית</span>
+        <h1>חוקרים את הסביבה שלנו – פעילות אינטראקטיבית</h1>
+        <p class="subtitle">מרכיבי סביבה · מאפייני חיים · צורכי קיום</p>
+      </div>
+      <div class="summary">
+        <div class="meter" id="meter" aria-label="מד התקדמות"></div>
+        <span id="totals" class="score">ציון: 0/0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid">
+    <!-- קטע מידע (מתוך הדף שהעלית) -->
+    <section class="card" id="reading">
+      <h2>קראו את קטע המידע</h2>
+      <details open>
+        <summary><strong>מרכיבי סביבה, מאפייני חיים וצורכי קיום</strong> <span class="hint">(לחצו לפתיחה/סגירה)</span></summary>
+        <div class="small">
+          <p>הסביבה שלנו מורכבת מהמון דברים! לכל מה שנמצא סביבנו אנחנו קוראים <strong>מרכיבי סביבה</strong>. אפשר לחלק את מרכיבי הסביבה לשתי קבוצות: <strong>מרכיבים חיים</strong> – בעלי חיים, צמחים ובני אדם; ו<strong>מרכיבים דוממים</strong> – דברים שאין בהם חיים, כמו אדמה, מים, אוויר, שמש וסלעים.</p>
+          <p>איך נדע אם משהו הוא באמת "חי"? לכל היצורים החיים יש <strong>מאפייני חיים</strong>, למשל: נושמים, זקוקים למזון ולמים, <strong>גדלים</strong>, <strong>זזים</strong> ו<strong>מביאים צאצאים</strong> (מתרבים). כדי שיוכלו לחיות ולגדול, הם חייבים לקבל מהסביבה <strong>צורכי קיום</strong>: מים, אוויר לנשימה, מזון, ומקום לחיות בו.</p>
+          <p class="note">הקטע מותאם מתוך דף העבודה שצירפת. תודה! 🙌</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 1) גרירה למיון: חי / דומם -->
+    <section class="card" id="dragdrop">
+      <h2>1) גרירה: מיינו ל<strong>חיים</strong> ול<strong>דוממים</strong></h2>
+      <p class="hint">גררו כל פריט לאזור המתאים. אם אין עכבר – אפשר ללחוץ על פריט ואז על האזור כדי "להניח".</p>
+      <div class="chips" id="pool" aria-label="מאגר פריטים לגרירה"></div>
+      <div class="zones">
+        <div class="zone" id="zone-life" data-accept="חי" tabindex="0" aria-label="אזור מרכיבים חיים">
+          <h3>מרכיבים חיים</h3>
+          <div class="placeholder">גררו לכאן פריטים חיים</div>
+        </div>
+        <div class="zone" id="zone-nonlife" data-accept="דומם" tabindex="0" aria-label="אזור מרכיבים דוממים">
+          <h3>מרכיבים דוממים</h3>
+          <div class="placeholder">גררו לכאן פריטים דוממים</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button onclick="checkDragDrop()">בדיקה</button>
+        <button class="secondary" onclick="resetDragDrop()">איפוס</button>
+        <span id="dragScore" class="score">0/10</span>
+      </div>
+    </section>
+
+    <!-- 2) התאמה: מאפייני חיים ↔ תיאור -->
+    <section class="card" id="matching">
+      <h2>2) התאמה: <span class="pill">מאפייני חיים ↔ תיאור</span></h2>
+      <p class="hint">לחצו תחילה על מאפיין (שמאל), ואז על התיאור המתאים (ימין).</p>
+      <div class="match">
+        <div class="list" id="match-left" aria-label="מאפייני חיים"></div>
+        <div class="list" id="match-right" aria-label="תיאורים"></div>
+      </div>
+      <div class="actions">
+        <button onclick="checkMatching()">בדיקה</button>
+        <button class="secondary" onclick="resetMatching()">איפוס</button>
+        <span id="matchScore" class="score">0/5</span>
+      </div>
+    </section>
+
+    <!-- 3) נכון / לא נכון -->
+    <section class="card" id="truefalse">
+      <h2>3) נכון / לא נכון</h2>
+      <div id="tfList" class="grid"></div>
+      <div class="actions">
+        <button onclick="checkTF()">בדיקה</button>
+        <button class="secondary" onclick="resetTF()">איפוס</button>
+        <span id="tfScore" class="score">0/5</span>
+      </div>
+    </section>
+
+    <!-- 4) רב-ברירה -->
+    <section class="card" id="mcq">
+      <h2>4) שאלות רב־ברירה</h2>
+      <div id="mcqList" class="grid"></div>
+      <div class="actions">
+        <button onclick="checkMCQ()">בדיקה</button>
+        <button class="secondary" onclick="resetMCQ()">איפוס</button>
+        <span id="mcqScore" class="score">0/2</span>
+      </div>
+    </section>
+
+    <!-- 5) השלמה (קלוז) -->
+    <section class="card" id="cloze">
+      <h2>5) השלמה (קלוז)</h2>
+      <p class="hint">כתבו את המילים החסרות. אין רגישות לאותיות סופיות/כתיב מלא–חסר נפוץ.</p>
+      <ol>
+        <li>
+          צורכי הקיום הכי חשובים הם:
+          <span class="inline">
+            <input data-key="מים" aria-label="חסר 1">
+            <input data-key="אוויר|אויר" aria-label="חסר 2">
+            <input data-key="מזון|אוכל|תזונה" aria-label="חסר 3">
+            <span>ו־</span>
+            <input data-key="מקום|בית גידול|סביבה" aria-label="חסר 4">
+          </span>
+        </li>
+        <li style="margin-top:.6rem;">
+          כתבו שני <strong>מאפייני חיים</strong>:
+          <span class="inline">
+            <input data-key="נושמים|נשימה|נשום|נשימה|" aria-label="מאפיין 1">
+            <span>ו־</span>
+            <input data-key="מתרבים|רבייה|רביה|מביאים צאצאים|גדלים|זזים|נעים|אוכלים|שותים|ניזונים" aria-label="מאפיין 2">
+          </span>
+        </li>
+      </ol>
+      <div class="actions">
+        <button onclick="checkCloze()">בדיקה</button>
+        <button class="secondary" onclick="resetCloze()">איפוס</button>
+        <span id="clozeScore" class="score">0/6</span>
+      </div>
+    </section>
+
+    <!-- 6) תשובות פתוחות (לא נבדק אוטומטית) -->
+    <section class="card" id="open">
+      <h2>6) תשובות פתוחות</h2>
+      <div class="grid grid-2">
+        <div>
+          <h3>משימה 3: מציאות בחצר</h3>
+          <p class="hint">כתבו 3 מרכיבים חיים ו־3 דוממים שמצאתם.</p>
+          <textarea id="open-1" placeholder="לדוגמה: חיים – חתול, חרצית, יונה; דוממים – סלע, שלולית, דלת כיתה."></textarea>
+        </div>
+        <div>
+          <h3>משימה 4: חושבים מעבר...</h3>
+          <p class="hint">איך תבדקו אם חפץ לא מוכר הוא חי או דומם? ומה יקרה ביער אם ייעלמו המים?</p>
+          <textarea id="open-2" placeholder="היעזרו במאפייני חיים: נשימה, תנועה, גדילה, רבייה..."></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="ghost" onclick="downloadAnswers()">הורדת תשובות (JSON)</button>
+        <button class="secondary" onclick="resetOpen()">איפוס</button>
+      </div>
+      <p class="note">שאלות אלו אינן נבדקות אוטומטית – מומלץ להגיש כקובץ/צילום בתוך מטלה ב‑Teams.</p>
+    </section>
+
+    <!-- סיכום -->
+    <section class="card" id="summary">
+      <h2>סיכום והגשה</h2>
+      <p class="kudos" id="kudos">כל הכבוד על העבודה וההשקעה! ✨</p>
+      <div class="actions">
+        <button onclick="checkAll()">בדיקה כוללת</button>
+        <button class="secondary" onclick="resetAll()">איפוס כל הפעילות</button>
+      </div>
+      <p class="small">טיפ למורות/ים: אפשר לשלב כפתור "הגשתי" שמוביל למטלה בטימס, או לחבר את הדף לטופס Forms לקבלת ציונים. ספרו לי אם תרצו זאת ואכין גרסה מחוברת לטופס.</p>
+    </section>
+  </main>
+
+  <script>
+    /***********************
+     *  נתוני הפעילות
+     ***********************/
+    // 1) גרירה: פריטים וקטגוריות
+    const DRAG_ITEMS = [
+      {text:"כלב", type:"חי"}, {text:"עץ", type:"חי"}, {text:"בן אדם", type:"חי"},
+      {text:"דג", type:"חי"}, {text:"פרח", type:"חי"},
+      {text:"שמש", type:"דומם"}, {text:"אבן", type:"דומם"}, {text:"מים", type:"דומם"},
+      {text:"אוויר", type:"דומם"}, {text:"אדמה", type:"דומם"},
+    ];
+
+    // 2) התאמה: מאפייני חיים ↔ תיאור
+    const MATCH_PAIRS = [
+      {left:"נושמים", right:"קולטים חמצן ונפטרים מפחמן דו־חמצני"},
+      {left:"אוכלים ושותים", right:"מקבלים חומרים מהסביבה לצמיחה והפקת אנרגיה"},
+      {left:"גדלים", right:"משנים גודל ומבנה עם הזמן"},
+      {left:"זזים", right:"מבצעים תנועה עצמאית (במידה כזו או אחרת)"},
+      {left:"מתרבים", right:"מביאים צאצאים/יוצרים דור חדש"},
+    ];
+
+    // 3) נכון/לא נכון – מתוך הדף המקורי
+    const TF_QUESTIONS = [
+      {q:"עץ שצומח בחצר הוא מרכיב סביבה דומם.", correct:false},
+      {q:"מים ואוויר הם צורכי קיום שאי אפשר לחיות בלעדיהם.", correct:true},
+      {q:"כלב שותה מים ונושם אוויר, לכן יש לו מאפייני חיים.", correct:true},
+      {q:"יצורים חיים לא צריכים מזון כדי לגדול.", correct:false},
+      {q:"אבן אינה נושמת ואינה גדלה, ולכן היא דומם.", correct:true},
+    ];
+
+    // 4) רב-ברירה
+    const MCQ = [
+      {
+        q:"מהן שתי הקבוצות של מרכיבי הסביבה?",
+        options:["צורכי קיום ומאפייני חיים","חיים ודוממים","צמחים ובעלי חיים בלבד","מים ואוויר"],
+        correct:1
+      },
+      {
+        q:"השמש היא דוגמה ל־",
+        options:["מרכיב חי","צורך קיום","מרכיב דומם","מאפיין חיים"],
+        correct:2
+      }
+    ];
+
+    // 5) Cloze – מוגדרים בקלטים עצמם באמצעות data-key
+
+    /***********************
+     *  עזרי ממשק
+     ***********************/
+    const byId = (id)=>document.getElementById(id);
+    const meter = byId('meter');
+    let totals = {max:0, got:0};
+
+    function updateMeter(){
+      meter.style.setProperty('--p', Math.round((totals.got / Math.max(1, totals.max))*100));
+      byId('totals').textContent = `ציון: ${totals.got}/${totals.max}`;
+      byId('kudos').textContent = totals.got/totals.max >= 0.85 ? "מצוין! המשיכו כך 🌟" :
+                                   totals.got/totals.max >= 0.6 ? "כל הכבוד! יש עוד קצת לשפר 💪" :
+                                   "יפה! בואו נבדוק שוב יחד 😊";
+    }
+
+    function normalizeHeb(str){
+      if(!str) return "";
+      let s = (""+str).trim().toLowerCase();
+      const map = {'ּ':'','ָ':'','ַ':'','ֶ':'','ֵ':'','ֹ':'','ִ':'','ׂ':'','ׁ':'','״':'"','׳':"'",'‑':'-','־':'-'};
+      s = s.normalize('NFKD').split('').map(ch=>map[ch] ?? ch).join('');
+      // ו/או ורווחים מיותרים
+      s = s.replace(/\s+/g,' ').replace(/[ׅ]/g,'').replace(/(?:ו-)|(?:-ו)/g,'ו');
+      // סופיות נפוצות
+      s = s.replace(/ך/g,'כ').replace(/ם/g,'מ').replace(/ן/g,'נ').replace(/ף/g,'פ').replace(/ץ/g,'צ');
+      return s;
+    }
+
+    /***********************
+     *  1) גרירה
+     ***********************/
+    const pool = byId('pool');
+    const zoneLife = byId('zone-life');
+    const zoneNon = byId('zone-nonlife');
+
+    function renderDragDrop(){
+      pool.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      DRAG_ITEMS.forEach((item, idx)=>{
+        const el = document.createElement('div');
+        el.className = 'chip';
+        el.setAttribute('draggable','true');
+        el.setAttribute('role','button');
+        el.setAttribute('aria-grabbed','false');
+        el.dataset.type = item.type;
+        el.id = `chip-${idx}`;
+        el.textContent = item.text;
+
+        // drag handlers
+        el.addEventListener('dragstart', e=>{
+          e.dataTransfer.setData('text/plain', el.id);
+          el.classList.add('dragging');
+        });
+        el.addEventListener('dragend', e=> el.classList.remove('dragging'));
+
+        // click-to-place for keyboard/touch
+        el.addEventListener('click', ()=>{
+          el.classList.toggle('activeChip');
+        });
+
+        frag.appendChild(el);
+      });
+      pool.appendChild(frag);
+
+      [zoneLife, zoneNon, pool].forEach(zone=>{
+        zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('over'); });
+        zone.addEventListener('dragleave', ()=> zone.classList.remove('over'));
+        zone.addEventListener('drop', e=>{
+          e.preventDefault();
+          const id = e.dataTransfer.getData('text/plain');
+          const chip = byId(id);
+          zone.appendChild(chip);
+          chip.classList.add('placed');
+          zone.classList.remove('over');
+        });
+        // click target for keyboard/touch
+        zone.addEventListener('click', ()=>{
+          const selected = document.querySelector('.activeChip');
+          if(selected){ zone.appendChild(selected); selected.classList.remove('activeChip'); selected.classList.add('placed'); }
+        });
+      });
+      byId('dragScore').textContent = `0/${DRAG_ITEMS.length}`;
+      saveProgress();
+    }
+
+    function checkDragDrop(){
+      let correct = 0;
+      const zones = [zoneLife, zoneNon];
+      zones.forEach(z=>{
+        const accept = z.dataset.accept;
+        [...z.querySelectorAll('.chip')].forEach(ch=>{
+          const ok = ch.dataset.type === accept;
+          ch.style.outline = ok ? '2px solid #42c79a' : '2px solid #ff8c8c';
+          if(ok) correct++;
+        });
+      });
+      byId('dragScore').textContent = `${correct}/${DRAG_ITEMS.length}`;
+      setSectionScore('drag', correct, DRAG_ITEMS.length);
+      saveProgress();
+    }
+    function resetDragDrop(){
+      renderDragDrop();
+      setSectionScore('drag', 0, DRAG_ITEMS.length, true);
+    }
+
+    /***********************
+     *  2) התאמה
+     ***********************/
+    let selectedLeft = null, selectedRight = null, matches = {};
+    function renderMatching(){
+      const left = byId('match-left'); const right = byId('match-right');
+      left.innerHTML = ''; right.innerHTML = ''; matches = {};
+      const shuffledL = shuffle([...MATCH_PAIRS]);
+      const shuffledR = shuffle([...MATCH_PAIRS]);
+      shuffledL.forEach((p,i)=>{
+        const el = makeItem(p.left, p.left);
+        left.appendChild(el);
+      });
+      shuffledR.forEach((p,i)=>{
+        const el = makeItem(p.right, p.left); // data-key = left text (pair id)
+        right.appendChild(el);
+      });
+      byId('matchScore').textContent = `0/${MATCH_PAIRS.length}`;
+      saveProgress();
+    }
+    function makeItem(text, key){
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.tabIndex = 0;
+      el.dataset.key = key;
+      el.innerHTML = `<span>${text}</span><span class="small" aria-hidden="true">בחרי</span>`;
+      el.addEventListener('click', ()=> itemSelect(el));
+      el.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); itemSelect(el); }});
+      return el;
+    }
+    function itemSelect(el){
+      const parentId = el.parentElement.id;
+      if(parentId === 'match-left'){
+        document.querySelectorAll('#match-left .item').forEach(i=>i.classList.remove('active'));
+        el.classList.add('active'); selectedLeft = el;
+      }else{
+        document.querySelectorAll('#match-right .item').forEach(i=>i.classList.remove('active'));
+        el.classList.add('active'); selectedRight = el;
+      }
+      if(selectedLeft && selectedRight){
+        const isCorrect = selectedLeft.dataset.key === selectedRight.dataset.key;
+        selectedLeft.classList.add(isCorrect ? 'correct' : 'wrong');
+        selectedRight.classList.add(isCorrect ? 'correct' : 'wrong');
+        const leftKey = selectedLeft.dataset.key;
+        matches[leftKey] = isCorrect;
+        selectedLeft = null; selectedRight = null;
+        saveProgress();
+      }
+    }
+    function checkMatching(){
+      let correct = Object.values(matches).filter(Boolean).length;
+      byId('matchScore').textContent = `${correct}/${MATCH_PAIRS.length}`;
+      setSectionScore('match', correct, MATCH_PAIRS.length);
+    }
+    function resetMatching(){
+      renderMatching();
+      selectedLeft = null; selectedRight = null;
+      setSectionScore('match', 0, MATCH_PAIRS.length, true);
+    }
+
+    /***********************
+     *  3) נכון/לא נכון
+     ***********************/
+    function renderTF(){
+      const box = byId('tfList'); box.innerHTML = '';
+      TF_QUESTIONS.forEach((it, idx)=>{
+        const row = document.createElement('div'); row.className='tf-row';
+        const text = document.createElement('div'); text.textContent = it.q;
+        const choices = document.createElement('div'); choices.className='tf-choices';
+        const n = `tf-${idx}`;
+        choices.appendChild(radio(n, 'נכון', 'true'));
+        choices.appendChild(radio(n, 'לא נכון', 'false'));
+        row.append(text, choices);
+        box.appendChild(row);
+      });
+      byId('tfScore').textContent = `0/${TF_QUESTIONS.length}`;
+      saveProgress();
+    }
+    function radio(name,label,val){
+      const w = document.createElement('label'); w.className='radio';
+      const input = document.createElement('input'); input.type='radio'; input.name=name; input.value=val;
+      w.append(input, document.createTextNode(label));
+      return w;
+    }
+    function checkTF(){
+      let correct = 0;
+      TF_QUESTIONS.forEach((it, idx)=>{
+        const sel = document.querySelector(`input[name="tf-${idx}"]:checked`);
+        const row = document.querySelectorAll('#tfList .tf-row')[idx];
+        if(!sel){ row.style.outline = '2px dashed #ffcf7b'; return; }
+        const ok = (sel.value === String(it.correct));
+        row.style.outline = ok ? '2px solid #42c79a' : '2px solid #ff8c8c';
+        if(ok) correct++;
+      });
+      byId('tfScore').textContent = `${correct}/${TF_QUESTIONS.length}`;
+      setSectionScore('tf', correct, TF_QUESTIONS.length);
+      saveProgress();
+    }
+    function resetTF(){
+      renderTF();
+      setSectionScore('tf', 0, TF_QUESTIONS.length, true);
+    }
+
+    /***********************
+     *  4) רב-ברירה
+     ***********************/
+    function renderMCQ(){
+      const box = byId('mcqList'); box.innerHTML='';
+      MCQ.forEach((q, qi)=>{
+        const card = document.createElement('div'); card.className='card';
+        const h = document.createElement('h3'); h.textContent = q.q;
+        card.appendChild(h);
+        q.options.forEach((opt, oi)=>{
+          const label = document.createElement('label'); label.className='option';
+          const input = document.createElement('input'); input.type='radio'; input.name=`mcq-${qi}`; input.value=oi;
+          label.append(input, document.createTextNode(opt));
+          card.appendChild(label);
+        });
+        box.appendChild(card);
+      });
+      byId('mcqScore').textContent = `0/${MCQ.length}`;
+      saveProgress();
+    }
+    function checkMCQ(){
+      let correct = 0;
+      MCQ.forEach((q, qi)=>{
+        const chosen = document.querySelector(`input[name="mcq-${qi}"]:checked`);
+        const options = document.querySelectorAll(`#mcqList .card:nth-child(${qi+1}) .option`);
+        options.forEach((opt, idx)=>{
+          opt.classList.remove('correct','wrong');
+          if(!chosen) return;
+          if(idx === q.correct && chosen.value == idx){ opt.classList.add('correct'); correct++; }
+          else if (chosen && idx == chosen.value){ opt.classList.add('wrong'); }
+        });
+      });
+      byId('mcqScore').textContent = `${correct}/${MCQ.length}`;
+      setSectionScore('mcq', correct, MCQ.length);
+      saveProgress();
+    }
+    function resetMCQ(){
+      renderMCQ();
+      setSectionScore('mcq', 0, MCQ.length, true);
+    }
+
+    /***********************
+     *  5) Cloze
+     ***********************/
+    function checkCloze(){
+      const inputs = [...document.querySelectorAll('#cloze input')];
+      let correct = 0, max = inputs.length; // 6 קלטים
+      // כדי למנוע כפילויות, נאפשר כל תשובה פעם אחת בלבד לכל "מחסן" מילים
+      const used = {};
+      inputs.forEach(inp=>{
+        const expect = (inp.dataset.key || '').split('|').map(normalizeHeb).filter(Boolean);
+        const val = normalizeHeb(inp.value);
+        const ok = expect.includes(val) && !(expect.join('|') in used && used[expect.join('|')].has(val));
+        inp.style.outline = ok ? '2px solid #42c79a' : (val ? '2px solid #ff8c8c' : '1px solid #cfe0ff');
+        if(ok){
+          correct++;
+          used[expect.join('|')] = used[expect.join('|')] || new Set();
+          used[expect.join('|')].add(val);
+        }
+      });
+      byId('clozeScore').textContent = `${correct}/${max}`;
+      setSectionScore('cloze', correct, max);
+      saveProgress();
+    }
+    function resetCloze(){
+      document.querySelectorAll('#cloze input').forEach(inp=>{ inp.value=''; inp.style.outline='1px solid #cfe0ff'; });
+      setSectionScore('cloze', 0, document.querySelectorAll('#cloze input').length, true);
+    }
+
+    /***********************
+     *  6) Open
+     ***********************/
+    function resetOpen(){
+      byId('open-1').value=''; byId('open-2').value='';
+      saveProgress();
+    }
+    function downloadAnswers(){
+      const data = collectAll(true);
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `תשובות_סביבה_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    /***********************
+     *  ציונים כוללים + איפוס
+     ***********************/
+    const sectionMax = {drag:DRAG_ITEMS.length, match:MATCH_PAIRS.length, tf:TF_QUESTIONS.length, mcq:MCQ.length, cloze:6};
+    const sectionGot = {drag:0, match:0, tf:0, mcq:0, cloze:0};
+    function setSectionScore(key, got, max, reset=false){
+      if(reset){ sectionGot[key]=0; }
+      else { sectionGot[key]=got; }
+      totals.max = Object.values(sectionMax).reduce((a,b)=>a+b,0);
+      totals.got = Object.values(sectionGot).reduce((a,b)=>a+b,0);
+      updateMeter();
+    }
+    function checkAll(){
+      checkDragDrop(); checkMatching(); checkTF(); checkMCQ(); checkCloze();
+      const data = collectAll();
+      console.log('סיכום לתלמיד/ה:', data);
+      alert(`ציון כולל: ${totals.got}/${totals.max}`);
+    }
+    function resetAll(){
+      resetDragDrop(); resetMatching(); resetTF(); resetMCQ(); resetCloze(); resetOpen();
+      localStorage.removeItem('envAct');
+      updateMeter();
+    }
+
+    /***********************
+     *  שמירת התקדמות מקומית
+     ***********************/
+    function collectAll(includeOpen=false){
+      // drag
+      const drag = {חי:[], דומם:[], מאגר:[]};
+      [...zoneLife.querySelectorAll('.chip')].forEach(c=>drag['חי'].push(c.textContent));
+      [...zoneNon.querySelectorAll('.chip')].forEach(c=>drag['דומם'].push(c.textContent));
+      [...pool.querySelectorAll('.chip')].forEach(c=>drag['מאגר'].push(c.textContent));
+      // match
+      const match = {};
+      document.querySelectorAll('#match-left .item').forEach(l=>{
+        const key = l.dataset.key;
+        const state = l.classList.contains('correct') ? 'נכון' : l.classList.contains('wrong') ? 'שגוי' : 'לא מותאם';
+        match[key] = state;
+      });
+      // tf
+      const tf = TF_QUESTIONS.map((it, idx)=>{
+        const sel = document.querySelector(`input[name="tf-${idx}"]:checked`);
+        return {q: it.q, a: sel ? (sel.value==='true' ? 'נכון' : 'לא נכון') : '—'};
+      });
+      // mcq
+      const mcq = MCQ.map((q, qi)=>{
+        const sel = document.querySelector(`input[name="mcq-${qi}"]:checked`);
+        return {q:q.q, a: sel ? q.options[+sel.value] : '—'};
+      });
+      // cloze
+      const cloze = [...document.querySelectorAll('#cloze input')].map((i,idx)=>({i:idx+1, val:i.value}));
+      // open
+      const open = includeOpen ? {חצר:byId('open-1').value, מחשבה:byId('open-2').value} : undefined;
+
+      return {score: {got: totals.got, max: totals.max}, drag, match, tf, mcq, cloze, open};
+    }
+    function saveProgress(){
+      const data = collectAll(true);
+      localStorage.setItem('envAct', JSON.stringify(data));
+    }
+    function loadProgress(){
+      const raw = localStorage.getItem('envAct');
+      if(!raw) return;
+      try{
+        const data = JSON.parse(raw);
+        // drag – ננסה לשחזר לפי שמות
+        const chips = [...document.querySelectorAll('#pool .chip')];
+        [...chips].forEach(chip=>{
+          const name = chip.textContent;
+          if(data.drag['חי'].includes(name)) zoneLife.appendChild(chip);
+          else if(data.drag['דומם'].includes(name)) zoneNon.appendChild(chip);
+        });
+        // tf
+        data.tf?.forEach((row, idx)=>{
+          const val = row.a === 'נכון' ? 'true' : row.a === 'לא נכון' ? 'false' : null;
+          if(val!==null){
+            const input = document.querySelector(`input[name="tf-${idx}"][value="${val}"]`);
+            input && (input.checked = true);
+          }
+        });
+        // mcq
+        data.mcq?.forEach((row, qi)=>{
+          const idx = MCQ[qi]?.options.indexOf(row.a);
+          if(idx>=0){
+            const input = document.querySelector(`input[name="mcq-${qi}"][value="${idx}"]`);
+            input && (input.checked = true);
+          }
+        });
+        // cloze
+        data.cloze?.forEach((ent, i)=>{
+          const input = document.querySelectorAll('#cloze input')[i];
+          if(input) input.value = ent.val || '';
+        });
+        // open
+        if(data.open){
+          byId('open-1').value = data.open.חצר || '';
+          byId('open-2').value = data.open.מחשבה || '';
+        }
+      }catch(e){ console.warn('Load failed', e); }
+    }
+
+    /***********************
+     *  Utils
+     ***********************/
+    function shuffle(arr){ for (let i=arr.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+
+    /***********************
+     *  Init
+     ***********************/
+    function init(){
+      renderDragDrop();
+      renderMatching();
+      renderTF();
+      renderMCQ();
+      updateMeter();
+      // נסה לטעון מצב שמור
+      loadProgress();
+    }
+    init();
+  </script>
+</body>
+</html>
